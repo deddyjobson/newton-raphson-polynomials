@@ -3,7 +3,7 @@ import argparse
 import math
 
 from scipy.optimize import newton
-import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 
 
 parser = argparse.ArgumentParser()
@@ -15,6 +15,7 @@ params = parser.parse_args()
 
 if params.default:
     p = np.poly( (1,2,3,4,5) )
+    # p = np.poly( (1j,2+3j,3-1j,4,5+5j) )
     d = len(p) - 1
 else:
     pass
@@ -49,16 +50,37 @@ for x0 in x0s:
     zero = newton(func=fun, x0=x0, fprime=funprime)
     zeros.append(zero)
 
-zeros = [z * upper_bound for z in zeros]
+zeros = np.array([z * upper_bound for z in zeros])
 
-print(*zeros,sep='\n')
 
+# now to extract the zeros...
+zeros = zeros.reshape((-1,1))
+kmeans = KMeans(n_clusters=d).fit(zeros)
+# print(*list(zip( zeros,kmeans.predict(zeros) )) , sep='\n')
+
+labels = kmeans.predict(zeros)
+zeros = zeros.reshape(-1)
+
+
+#reorganizing all clusters
+roots = [[] for _ in range(d)]
+for i,z in enumerate(zeros):
+    roots[labels[i]].append(z)
+
+for i,r in enumerate(roots):
+    roots[i] = sum(r)/len(r)
+
+print('Displaying with 4 digits of precision.')
+for r in roots:
+    print(np.round(r,4))
 
 # to display newton fractals
 if params.display:
     # Newton fractals
     # Based on FB - 201003291, http://code.activestate.com/
     from PIL import Image
+    import matplotlib.pyplot as plt
+
     imgx = 800
     imgy = 800
     image = Image.new("RGB", (imgx, imgy))
