@@ -18,14 +18,43 @@ if params.default:
     # p = np.poly( (1j,2+3j,3-1j,4,5+5j) )
     d = len(p) - 1
 else:
-    pass
+    choice = 0
+    while choice not in (1,2):
+        print('How do you want to input the polynomial?')
+        print('1.Coefficients')
+        print('2.Roots')
+        choice = int(input())
+        if choice == 1:
+            d = int(input('Enter the degree of the polynomial:'))
+            p = np.zeros(shape=d+1,dtype=np.complex_)
+            p[0] = 1 # default value
+            print('Enter the exponent and the coefficient in pairs in this format:')
+            print('\nEx: For d = 4')
+            print('0,1.1 3,-1 2,2-1j    ->    x^4 - x^3 + (2-1j)x^2 + 0x + 1.1\n')
+            coeffs = input('Coefficients:').strip().split()
+            coeffs = map(lambda x:x.split(',') , coeffs)
+            for pos,val in coeffs:
+                pos = int(pos)
+                if pos > d or pos < 0:
+                    exit('Illegal exponent value')
+                val = complex(val)
+                p[pos] = val
+        elif choice == 2:
+            print('Enter the zeros separated by spaces:')
+            zeros = input().strip().split()
+            zeros = list(map(complex,zeros))
+            p = np.poly(zeros)
+            d = len(p) - 1
+        else:
+            pass
 
 
 # obtaining upper bound on roots using Cauchy
+p /= p[0] # to make it monic
 coeffs = list(np.absolute(p))[1:]
 upper_bound = max(map( lambda x:x[1]**(1/(x[0]+1)) , enumerate(coeffs) ))
 p /= upper_bound**np.arange(p.shape[0])
-p /= p[0] # to make it monic
+p /= p[0] # to ensure it's monic
 
 
 #obtaining starting points
@@ -50,17 +79,16 @@ for x0 in x0s:
     zero = newton(func=fun, x0=x0, fprime=funprime)
     zeros.append(zero)
 
-zeros = np.array([z * upper_bound for z in zeros])
-
+# filtering out zeros by evaluating on function
+zeros = np.array([z * upper_bound for z in zeros if math.isclose(abs(fun(z)),0,abs_tol=1e-4)])
 
 # now to extract the zeros...
-zeros = zeros.reshape((-1,1))
-kmeans = KMeans(n_clusters=d).fit(zeros)
+zeros_cart = np.array([ [z.real,z.imag] for z in zeros ])
+kmeans = KMeans(n_clusters=d).fit(zeros_cart)
 # print(*list(zip( zeros,kmeans.predict(zeros) )) , sep='\n')
 
-labels = kmeans.predict(zeros)
-zeros = zeros.reshape(-1)
-
+labels = kmeans.predict(zeros_cart)
+del zeros_cart
 
 #reorganizing all clusters
 roots = [[] for _ in range(d)]
