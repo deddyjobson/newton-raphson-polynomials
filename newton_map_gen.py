@@ -11,9 +11,9 @@ from time import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--default',type=int,default=1)
-parser.add_argument('--resolution',type=int,default=64)
+parser.add_argument('--resolution',type=int,default=1024)
 parser.add_argument('--extent',type=float,default=2)
-parser.add_argument('--maxiter',type=int,default=1000)
+parser.add_argument('--maxiter',type=int,default=100)
 parser.add_argument('--tol',type=float,default=1e-8)
 parser.add_argument('--save_file',type=str,default='')
 
@@ -22,6 +22,13 @@ params = parser.parse_args()
 if params.default:
     zeros = (1,2,3,4,5)
     zeros = (1j,2+3j,3-1j,4,5+5j)
+    zeros = (1j,-1j,1,-1,0)
+    zeros = (1j,-1j,1,-1,0,1+1j,1-1j,-1+1j,-1-1j)
+    zeros = (1j*0.2,-1j*0.2,1*0.2,-1*0.2,0,(1+1j)*2,(1-1j)*2,(-1+1j)*2,(-1-1j)*2)
+    zeros = tuple(0.25*np.exp(1j*np.arange(0,2*np.pi,2*np.pi/5))) + \
+            tuple(0.5*( np.exp(1j*np.arange(0,2*np.pi,2*np.pi/5) + 2j*np.pi/10) )) + \
+            tuple(1*np.exp(1j*np.arange(0,2*np.pi,2*np.pi/5))) +\
+            (0,)
     p = np.poly( zeros )
     d = len(p) - 1
 else:
@@ -132,8 +139,8 @@ for i in range(len(nmap)):
 # zeros = list(enumerate(zeros))
 img = np.zeros(shape=(params.resolution,params.resolution,3),dtype=np.uint8)
 
-# colors = [np.random.randint(0,255,size=3,dtype=np.uint8) for _ in zeros]
-colors = []
+colors = [np.random.randint(0,255,size=3,dtype=np.uint8) for _ in zeros]
+# colors = [np.array((255,0,0)),np.array((0,255,0)),np.array((0,0,255)),np.array((255,255,0)),np.array((255,102,255))] # sufficiently spaced apart
 while len(colors) < len(zeros):
     c = np.random.randint(0,255,size=3,dtype=np.uint8)
     if sum(c) > 400:
