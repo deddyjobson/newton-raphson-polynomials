@@ -4,6 +4,7 @@ import math
 import multiprocessing
 import png
 import warnings
+import os
 
 # from scipy.optimize import newton
 from sklearn.cluster import KMeans
@@ -20,17 +21,9 @@ parser.add_argument('--save_file',type=str,default='')
 
 params = parser.parse_args()
 
-if params.default:
-    zeros = (1,2,3,4,5)
-    zeros = tuple( [0] + list(np.exp( 1j * np.linspace(0,2*np.pi,4, endpoint=False)) ) )
-    p = np.poly( zeros )
-    d = len(p) - 1
-else:
-    print('Enter the zeros separated by spaces:')
-    zeros = input().strip().split()
-    zeros = list(map(complex,zeros))
-    p = np.poly(zeros)
-    d = len(p) - 1
+zeros = (0,0,0,1)
+p = np.poly( zeros )
+d = len(p) - 1
 
 
 
@@ -99,6 +92,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
     # so it still works if x0 is complex.
     p0 = 1.0 * x0
+    plist = [p0]
 
 
     # Newton-Rapheson method
@@ -107,51 +101,47 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         if fder == 0:
             msg = "derivative was zero."
             warnings.warn(msg, RuntimeWarning)
-            return p0, 1000
+            return p0,0,0 # give some dummy value
         fval = func(p0, *args)
         newton_step = fval / fder
-        if fprime2 is None:
-            # Newton step
-            p = p0 - newton_step
-        else:
-            fder2 = fprime2(p0, *args)
-            # Halley's method
-            p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
+        p = p0 - newton_step
+        plist.append(p)
         if abs(p - p0) < tol:
-            return p, iter # returning number of iterations also
+            val = any([math.isclose(abs(pt-2/3),0,abs_tol=1e-1) for pt in plist])
+            return p, iter, val # returning number of iterations also, and pre-image of root
+        p_1 = p0
         p0 = p
+
     msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
     raise RuntimeError(msg)
 
 darkness = np.empty_like(nmap,dtype = np.int_)
+vals = np.empty_like(darkness,dtype = np.int_)
 for i in range(len(nmap)):
     try:
-        nmap[i],darkness[i] = newton(func=fun, x0=z0s[i], fprime=funprime, tol=params.tol, maxiter=params.maxiter)
+        nmap[i],darkness[i],vals[i] = newton(func=fun, x0=z0s[i], fprime=funprime, tol=params.tol, maxiter=params.maxiter)
     except RuntimeError:
-        nmap[i],darkness[i] = 2, params.maxiter # all roots lie within unit circle, so this should work
+        nmap[i],darkness[i],vals[i] = 2, params.maxiter, 0 # all roots lie within unit circle, so this should work
 
 # zeros = list(enumerate(zeros))
 img = np.zeros(shape=(params.resolution,params.resolution,3),dtype=np.uint8)
 
-colors = [np.random.randint(0,255,size=3,dtype=np.uint8) for _ in zeros]
-# colors = [np.array((255,0,0)),np.array((0,255,0)),np.array((0,0,255)),np.array((255,255,0)),np.array((255,102,255))] # sufficiently spaced apart
-while len(colors) < len(zeros):
-    c = np.random.randint(0,255,size=3,dtype=np.uint8)
-    if sum(c) > 400:
-        colors.append(c)
+colors = [np.array((255,0,0)),np.array((0,255,0)),np.array((0,0,255))] # sufficiently spaced apart
+black = np.array((0,0,0))
 
 nmap = nmap.reshape(z0shape)
 darkness = darkness.reshape(z0shape)
-
-# creating image
-for i in range(len(nmap[0])):
-    for j in range(len(nmap)):
-        root = nmap[i][j] * upper_bound
-        for z,zero in enumerate(zeros):
-            if math.isclose(abs(root-zero),0,abs_tol=1e-4):
-                img[i][j] = colors[z] / (1 + math.log10(1+darkness[i][j]))
-                # img[i][j] = colors[z] / (1 + math.log10(1+max(0,darkness[i][j]-10)))
-                break
+vals = vals.reshape(z0shape)
 
 
-png.from_array(img, 'RGB').save("NewtonMap{0}.png".format(params.resolution))
+for x in range(100):
+    # creating image
+    for i in range(len(nmap[0])):
+        for j in range(len(nmap)):
+            root = nmap[i][j] * upper_bound
+            if math.isclose(abs(root-0),0,abs_tol=1e-4) and darkness[i][j]<=x:
+                img[i][j] = colors[darkness[i][j] % 3]
+            else:
+                img[i][j] = black
+    png.from_array(img, 'RGB').save(os.path.join('CumulativeIter',"{0}_iter.png".format(x)))
+    # png.from_array(img, 'RGB').save("NewtonMapDiscrete{0}.png".format(params.resolution))

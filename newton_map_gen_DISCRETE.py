@@ -22,13 +22,13 @@ params = parser.parse_args()
 if params.default:
     zeros = (1,2,3,4,5)
     zeros = (1j,2+3j,3-1j,4,5+5j)
-    zeros = (1j,-1j,1,-1,0)
+    zeros = (0,0,0,1)
     # zeros = tuple(0.25*np.exp(1j*np.arange(0,2*np.pi,2*np.pi/5))) + \
     #         tuple(0.5*( np.exp(1j*np.arange(0,2*np.pi,2*np.pi/5) + 2j*np.pi/10) )) + \
     #         tuple(1*np.exp(1j*np.arange(0,2*np.pi,2*np.pi/5))) +\
     #         (0,)
 
-    zeros = (0,0,-1,1)
+    # zeros = (0,0,-1,1)
     p = np.poly( zeros )
     d = len(p) - 1
 else:

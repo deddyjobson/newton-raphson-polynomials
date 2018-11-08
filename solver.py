@@ -80,7 +80,7 @@ for x0 in x0s:
     zeros.append(zero)
 
 # filtering out zeros by evaluating on function
-zeros = np.array([z * upper_bound for z in zeros if math.isclose(abs(fun(z)),0,abs_tol=1e-4)])
+zeros = np.array([z * upper_bound for z in zeros if math.isclose(abs(fun(z)),0,abs_tol=1e-4)]) # WOT!
 
 # now to extract the zeros...
 zeros_cart = np.array([ [z.real,z.imag] for z in zeros ])
