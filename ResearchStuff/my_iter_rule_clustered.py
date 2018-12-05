@@ -15,7 +15,8 @@ params = parser.parse_args()
 
 
 # p = np.poly( (1,2,3,4,5) )
-zeros_set = tuple( [0] + list(np.exp( 1j * np.linspace(0,2*np.pi,100, endpoint=False)) ) )
+# zeros_set = tuple( [0] + list(np.exp( 1j * np.linspace(0,2*np.pi,50, endpoint=False)) ) )
+zeros_set = tuple( [0] + list(np.exp( 1j * np.random.uniform(0,2*np.pi,50) ) ) )
 p = np.poly( zeros_set )
 # p = np.poly( (1j,2+3j,3-1j,4,5+5j) )
 d = len(p) - 1
