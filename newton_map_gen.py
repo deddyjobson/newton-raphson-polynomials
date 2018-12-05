@@ -4,6 +4,8 @@ import math
 import multiprocessing
 import png
 import warnings
+import os
+import pickle
 
 # from scipy.optimize import newton
 from sklearn.cluster import KMeans
@@ -12,9 +14,9 @@ from time import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--default',type=int,default=1)
-parser.add_argument('--resolution',type=int,default=1024)
+parser.add_argument('--resolution',type=int,default=1000)
 parser.add_argument('--extent',type=float,default=2)
-parser.add_argument('--maxiter',type=int,default=100)
+parser.add_argument('--maxiter',type=int,default=1000)
 parser.add_argument('--tol',type=float,default=1e-8)
 parser.add_argument('--save_file',type=str,default='')
 
@@ -22,7 +24,6 @@ params = parser.parse_args()
 
 if params.default:
     zeros = (1,2,3,4,5)
-    zeros = tuple( [0] + list(np.exp( 1j * np.linspace(0,2*np.pi,4, endpoint=False)) ) )
     p = np.poly( zeros )
     d = len(p) - 1
 else:
